@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
-    xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
-    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="053576a0-1a09-46cf-bbab-bab12f8f0101">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+    xmlns="http://www.mulesoft.org/schema/mule/core"
+    xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b7a3c76a-c649-444e-bcbf-a5b6d3ed82d9">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="a462f84c-a5a4-4cf3-b6b0-4310a1ad4dde" >
-        <http:request-connection host="localhost" port="8081" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5380e618-8868-4d07-8a04-c93ad27d6fdc" >
+        <http:request-connection host="localhost" port="#[attributes.headers['routed-port']]" />
     </http:request-config>
-    <flow name="routing-api-pocFlow" doc:id="661b7d27-054c-40f9-8edd-781c3f0f33ef" >
-        <http:listener doc:name="Router" doc:id="fe2a96da-f2cb-4470-ae79-c94a4197cd58" config-ref="HTTP_Listener_config" path="/router"/>
-        <logger level="INFO" doc:name="Logger" doc:id="d4994572-20a2-4c26-8c67-01189fff4b9f" message="Inside Router"/>
-        <http:request method="GET" doc:name="Route Request" doc:id="ed75c74a-af80-4e4b-9fb4-a8595bad63ab" config-ref="HTTP_Request_configuration" path="#[&quot;/&quot; ++ attributes.headers['api']]"/>
+    <http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="75ed25aa-62c7-46a6-ae48-a6b4f5c53631" >
+        <http:listener-connection host="0.0.0.0" port="8082" />
+    </http:listener-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="f0780020-2ae3-4958-82d5-c000dd573acf" file="config.properties" />
+    <flow name="routing-api-pocFlow" doc:id="fa5c27a5-1129-442f-b324-08b897050210" >
+        <http:listener doc:name="Router" doc:id="81dad8ca-a799-4432-b22f-aa617997a54b" config-ref="HTTP_Listener_config" path="${routingPath}/*"/>
+        <logger level="INFO" doc:name="Logger" doc:id="e99aa498-7546-46f1-9fb9-7c51f328c9da" message='#["Method: " ++ attributes.method ++ " Relative Path: " ++ attributes.relativePath]'/>
+        <http:request method="#[attributes.method]" doc:name="Route Request" doc:id="3b3f5906-47e9-4fd9-9593-00d98d13b1a2" config-ref="HTTP_Request_configuration" sendCorrelationId="ALWAYS" path="#[attributes.relativePath[sizeOf(p('routingPath')) to -1]]">
+            <http:headers ><![CDATA[#[attributes.headers]]]></http:headers>
+            <http:uri-params ><![CDATA[#[attributes.uriParams]]]></http:uri-params>
+            <http:query-params ><![CDATA[#[attributes.queryParams]]]></http:query-params>
+        </http:request>
     </flow>
-    <flow name="first-route" doc:id="2c0ff78a-6f1a-4050-ad0e-3d8b686c3bd1" >
-        <http:listener doc:name="Listener" doc:id="50675783-e961-475a-b7d2-a4e2b0dce257" config-ref="HTTP_Listener_config" path="/route1"/>
-        <set-payload value="route 1" doc:name="Set Payload" doc:id="ad4470cd-e895-40e5-b005-e8386687085d" />
+    <flow name="first-route" doc:id="0f35ad29-7afc-4dad-bccb-cb1b4154ef9c" >
+        <http:listener doc:name="Listener" doc:id="e2ad7e6c-ee09-4eb7-9612-878f0fa18fa0" config-ref="HTTP_Listener_config" path="/customers"/>
+        <set-payload value="route 1" doc:name="Set Payload" doc:id="9152fc5e-a3a2-4af5-b1d9-ff6ab3655c62" />
     </flow>
-    <flow name="second-route" doc:id="3294d9c1-bb45-4f5d-9a17-baf4799f8ebb" >
-        <http:listener doc:name="Listener" doc:id="af60b782-b18a-4cc0-b357-214abd6cfcdd" config-ref="HTTP_Listener_config" path="/route2"/>
-        <set-payload value="route 2" doc:name="Set Payload" doc:id="9d6ba3b3-fd84-42ca-9acd-e6f623b3b52f" />
+    <flow name="second-route" doc:id="4feddca7-896c-4c11-8498-bc832791bae2" >
+        <http:listener doc:name="Listener" doc:id="53d2a418-6f31-48ce-a3fe-9696538e20da" config-ref="HTTP_Listener_config1" path="/customers"/>
+        <set-payload value="route 2" doc:name="Set Payload" doc:id="c71c103e-7118-4334-b4c6-2a30ec4e7921" />
     </flow>
 </mule>
